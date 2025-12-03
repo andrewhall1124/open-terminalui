@@ -17,3 +17,8 @@ open-terminalui = "open_terminalui.main:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "textual-dev>=1.8.0",
+]
