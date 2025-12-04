@@ -6,11 +6,16 @@ Header {
 }
 
 #output {
-    /*background: orange;*/
     height: 1fr;
     align: left bottom;
+    color: lime;
+}
+
+#loading_indicator {
+    color: lime;
+    height: 1;
 }
 
 #input {
-    /*background: red;*/
+    dock: bottom;
 }
