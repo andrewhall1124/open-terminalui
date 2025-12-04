@@ -1,8 +1,17 @@
-Header {
+#chat_container {
+    height: 1fr;
+    align: center bottom;
+    padding: 1;
 }
 
-#container {
-    /*background: green;*/
+.message-user {
+    color: white;
+    text-align: right;
+}
+
+.message-assistant {
+    color: lime;
+    text-align: left;
 }
 
 #output {
