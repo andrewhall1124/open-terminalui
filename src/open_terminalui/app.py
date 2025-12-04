@@ -6,6 +6,7 @@ from textual.widgets import Footer, Header, Input, Label, ListItem, ListView, St
 
 from .models import Chat, Message
 from .storage import ChatStorage
+from .theme import open_terminalui_theme
 
 
 class ChatMessage(Static):
@@ -72,6 +73,8 @@ class OpenTerminalUI(App):
 
     def on_mount(self) -> None:
         """Initialize a new chat on startup"""
+        self.register_theme(open_terminalui_theme)
+        self.theme = "open_terminalui"
         self.refresh_chat_list()
         self.new_chat()
 
