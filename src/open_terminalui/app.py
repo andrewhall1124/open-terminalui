@@ -11,6 +11,7 @@ from textual.widgets import (
     ListView,
     Markdown,
     Static,
+    Switch,
 )
 
 from .models import Chat, Message
@@ -77,7 +78,13 @@ class OpenTerminalUI(App):
                 with VerticalScroll(id="chat_container"):
                     pass  # Messages will be added dynamically
                 yield Static("", id="loading_indicator")
-                yield Input(type="text", id="input", placeholder="Type a message...")
+                with Vertical(id="input_bar"):
+                    yield Input(
+                        type="text", id="input", placeholder="Type a message..."
+                    )
+                    with Horizontal(id="search_container"):
+                        yield Label("Search:", id="search_label")
+                        yield Switch(value=False, id="search_switch")
         yield Footer()
 
     def on_mount(self) -> None:

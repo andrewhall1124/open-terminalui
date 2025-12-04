@@ -58,9 +58,18 @@
 #loading_indicator {
     color: $primary;
     height: 1;
+    padding: 1;
 }
 
-#input {
-    dock: bottom;
-    margin-bottom: 1;
+#input_bar {
+    height: auto;
+}
+
+#search_container {
+    height: auto;
+    padding: 1;
+}
+
+#search_label {
+    padding: 1;
 }
