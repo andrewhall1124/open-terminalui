@@ -1,3 +1,30 @@
+#sidebar {
+    width: 30;
+    height: 100%;
+    border-right: solid $primary;
+}
+
+#sidebar_title {
+    text-style: bold;
+    background: $primary;
+    color: $text;
+    padding: 1;
+    text-align: center;
+    width: 100%;
+}
+
+#chat_list {
+    height: 1fr;
+}
+
+#chat_list > ListItem {
+    padding: 1;
+}
+
+#chat_list > ListItem:hover {
+    background: $primary;
+}
+
 #chat_container {
     height: 1fr;
     align: center top;
@@ -12,7 +39,7 @@
 }
 
 .message-label-assistant {
-    color: lime;
+    color: $primary;
     text-style: bold;
     text-align: left;
     width: 100%;
@@ -25,14 +52,15 @@
 
 .message-assistant .message-content {
     text-align: left;
-    color: lime;
+    color: $primary;
 }
 
 #loading_indicator {
-    color: lime;
+    color: $primary;
     height: 1;
 }
 
 #input {
     dock: bottom;
+    margin-bottom: 1;
 }
