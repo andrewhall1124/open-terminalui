@@ -4,19 +4,27 @@
     padding: 1;
 }
 
-.message-user {
+.message-label-user {
     color: white;
+    text-style: bold;
     text-align: right;
+    width: 100%;
 }
 
-.message-assistant {
+.message-label-assistant {
     color: lime;
+    text-style: bold;
     text-align: left;
+    width: 100%;
 }
 
-#output {
-    height: 1fr;
-    align: left bottom;
+.message-user .message-content {
+    text-align: right;
+    color: white;
+}
+
+.message-assistant .message-content {
+    text-align: left;
     color: lime;
 }
 

@@ -1,17 +1,29 @@
 from ollama import chat
 from textual import on, work
 from textual.app import App, ComposeResult
-from textual.containers import Vertical, VerticalScroll
-from textual.widgets import Footer, Header, Input, Static
+from textual.containers import Container, Vertical, VerticalScroll
+from textual.widgets import Footer, Header, Input, Label, Static
 
 
 class ChatMessage(Static):
-    """A single chat message widget"""
+    """A single chat message widget with label"""
 
     def __init__(self, content: str, role: str, *args, **kwargs):
-        super().__init__(content, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.role = role
+        self.content = content
         self.add_class(f"message-{role}")
+
+    def compose(self) -> ComposeResult:
+        label_text = "You:" if self.role == "user" else "Assistant:"
+        yield Label(label_text, classes=f"message-label-{self.role}")
+        yield Static(self.content, classes="message-content")
+
+    def update_content(self, new_content: str) -> None:
+        """Update the message content"""
+        self.content = new_content
+        content_widget = self.query_one(".message-content", Static)
+        content_widget.update(new_content)
 
 
 class OpenTerminalUI(App):
@@ -57,12 +69,13 @@ class OpenTerminalUI(App):
         loading_indicator = self.query_one("#loading_indicator", Static)
         self.call_from_thread(loading_indicator.update, "Thinking...")
 
-        # Selecte chat history widget
+        # Select chat history widget
         chat_container = self.query_one("#chat_container", VerticalScroll)
 
         # Stream ollama response
         stream = chat(model="llama3.2", messages=self.chat_history, stream=True)
         accumulated_text = ""
+
         for i, chunk in enumerate(stream):
             accumulated_text += chunk["message"]["content"]
 
@@ -82,7 +95,7 @@ class OpenTerminalUI(App):
             else:
                 self.chat_history[-1]["content"] = accumulated_text
                 self.call_from_thread(
-                    self.current_assistant_message.update, accumulated_text
+                    self.current_assistant_message.update_content, accumulated_text
                 )
 
             # Auto-scroll to bottom
