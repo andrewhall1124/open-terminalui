@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [project.scripts]
-open-terminalui = "open_terminalui.main:main"
+open-terminalui = "open_terminalui"
 
 [build-system]
 requires = ["hatchling"]

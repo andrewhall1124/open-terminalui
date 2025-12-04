@@ -15,24 +15,12 @@ Using UV (recommended):
 ```bash
 # Install dependencies
 uv sync
-
-# Run the application
-uv run open-terminalui
 ```
 
-## Usage
+## Development
 
-1. Make sure Ollama is running:
-   ```bash
-   ollama serve
-   ```
+Run textual app in development mode
 
-2. Pull a model if you haven't already:
-   ```bash
-   ollama pull llama2
-   ```
-
-3. Launch Open Terminal UI:
-   ```bash
-   uv run open-terminalui
-   ```
+```bash
+textual run --dev open_terminalui:main
+```
