@@ -32,16 +32,22 @@ class OpenTerminalUI(App):
 
     @work(exclusive=True, thread=True)
     def stream_ollama_response(self, content: str) -> None:
+        # Create messages
         messages = [{"role": "user", "content": content}]
+
+        # Select widgets
         output_widget = self.query_one("#output", Markdown)
         loading_indicator_widget = self.query_one("#loading_indicator", Markdown)
 
+        # Update widgets before streaming
         self.call_from_thread(output_widget.update, "")
         self.call_from_thread(loading_indicator_widget.update, "Thinking...")
 
+        # Stream output
         accumulated_text = ""
         stream = chat(model="llama3.2", messages=messages, stream=True)
 
+        # Update widgets with stream
         for i, chunk in enumerate(stream):
             accumulated_text += chunk["message"]["content"]
             self.call_from_thread(output_widget.update, accumulated_text)
