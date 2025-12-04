@@ -15,7 +15,7 @@ class ChatMessage(Static):
         self.add_class(f"message-{role}")
 
     def compose(self) -> ComposeResult:
-        label_text = "You:" if self.role == "user" else "Assistant:"
+        label_text = "User:" if self.role == "user" else "Assistant:"
         yield Label(label_text, classes=f"message-label-{self.role}")
         yield Static(self.content, classes="message-content")
 
