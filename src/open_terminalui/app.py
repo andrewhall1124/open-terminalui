@@ -2,7 +2,16 @@ from ollama import chat
 from textual import on, work
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical, VerticalScroll
-from textual.widgets import Footer, Header, Input, Label, ListItem, ListView, Static
+from textual.widgets import (
+    Footer,
+    Header,
+    Input,
+    Label,
+    ListItem,
+    ListView,
+    Markdown,
+    Static,
+)
 
 from .models import Chat, Message
 from .storage import ChatStorage
@@ -14,19 +23,19 @@ class ChatMessage(Static):
 
     def __init__(self, content: str, role: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.role = role
-        self.content = content
+        self.role: str = role
+        self.content: str = content
         self.add_class(f"message-{role}")
 
     def compose(self) -> ComposeResult:
         label_text = "User:" if self.role == "user" else "Assistant:"
         yield Label(label_text, classes=f"message-label-{self.role}")
-        yield Static(self.content, classes="message-content")
+        yield Markdown(markdown=self.content, classes="message-content")
 
     def update_content(self, new_content: str) -> None:
         """Update the message content"""
         self.content = new_content
-        content_widget = self.query_one(".message-content", Static)
+        content_widget = self.query_one(".message-content", Markdown)
         content_widget.update(new_content)
 
 
@@ -88,16 +97,13 @@ class OpenTerminalUI(App):
             chat_list.append(ChatListItem(chat_id, title))
 
     def new_chat(self) -> None:
-        """Create a new chat and clear the UI"""
-        self.current_chat = self.storage.create_chat()
+        """Create a new chat and clear the UI (not saved to DB until it has messages)"""
+        self.current_chat = Chat.create_unsaved()
         self.chat_history = []
 
         # Clear chat container
         chat_container = self.query_one("#chat_container", VerticalScroll)
         chat_container.remove_children()
-
-        # Refresh sidebar to show new chat
-        self.refresh_chat_list()
 
     def load_chat(self, chat_id: int) -> None:
         """Load an existing chat"""
@@ -121,7 +127,7 @@ class OpenTerminalUI(App):
     @on(Input.Submitted, "#input")
     def handle_input_submission(self) -> None:
         input_widget = self.query_one("#input", Input)
-        content = input_widget.value.strip()
+        content: str = input_widget.value.strip()
 
         if not content:
             return
@@ -216,11 +222,15 @@ class OpenTerminalUI(App):
         self.storage.delete_chat(chat_id_to_delete)
 
         # If we're deleting the current chat, create a new one
-        if self.current_chat and self.current_chat.id == chat_id_to_delete:
+        if (
+            self.current_chat
+            and self.current_chat.id is not None
+            and self.current_chat.id == chat_id_to_delete
+        ):
             self.new_chat()
-        else:
-            # Just refresh the sidebar
-            self.refresh_chat_list()
+
+        # Refresh the sidebar
+        self.refresh_chat_list()
 
     def action_toggle_sidebar(self) -> None:
         """Toggle sidebar visibility"""

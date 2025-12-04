@@ -57,10 +57,24 @@ class ChatStorage:
         chat.updated_at = datetime.now()
 
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute(
-                "UPDATE chats SET title = ?, messages_json = ?, updated_at = ? WHERE id = ?",
-                (chat.title, messages_json, chat.updated_at.isoformat(), chat.id),
-            )
+            if chat.id is None:
+                # Chat doesn't exist in DB yet, insert it
+                cursor = conn.execute(
+                    "INSERT INTO chats (title, messages_json, created_at, updated_at) VALUES (?, ?, ?, ?)",
+                    (
+                        chat.title,
+                        messages_json,
+                        chat.created_at.isoformat(),
+                        chat.updated_at.isoformat(),
+                    ),
+                )
+                chat.id = cursor.lastrowid
+            else:
+                # Chat exists, update it
+                conn.execute(
+                    "UPDATE chats SET title = ?, messages_json = ?, updated_at = ? WHERE id = ?",
+                    (chat.title, messages_json, chat.updated_at.isoformat(), chat.id),
+                )
             conn.commit()
 
     def load_chat(self, chat_id: int) -> Chat | None:
