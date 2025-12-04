@@ -1,24 +1,73 @@
-[project]
-name = "open-terminalui"
-version = "0.1.0"
-description = "A terminal UI for interacting with Ollama and local LLM models"
-readme = "README.md"
-requires-python = ">=3.13"
-dependencies = [
-    "textual>=0.47.0",
-    "ollama>=0.4.0",
-    "aiofiles>=24.1.0",
-    "prek>=0.2.19",
-]
-
-[project.scripts]
-open-terminalui = "open_terminalui"
-
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[project]
+name = "open-terminalui"
+dynamic = ["version"]
+description = ''
+readme = "README.md"
+requires-python = ">=3.13"
+license = "MIT"
+keywords = []
+authors = [
+  { name = "Andrew Hall", email = "andrewmartinhall2@gmail.com" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = [
+    "ollama>=0.6.1",
+    "textual[syntax]>=0.73.0",
+]
+
+[project.urls]
+Documentation = "https://github.com/Andrew Hall/open-terminalui#readme"
+Issues = "https://github.com/Andrew Hall/open-terminalui/issues"
+Source = "https://github.com/Andrew Hall/open-terminalui"
+
+[tool.hatch.version]
+path = "src/open_terminalui/__about__.py"
+
+[tool.hatch.envs.types]
+extra-dependencies = [
+  "mypy>=1.0.0",
+]
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:src/open_terminalui tests}"
+
+[tool.coverage.run]
+source_pkgs = ["open_terminalui", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/open_terminalui/__about__.py",
+]
+
+[tool.coverage.paths]
+open_terminalui = ["src/open_terminalui", "*/open-terminalui/src/open_terminalui"]
+tests = ["tests", "*/open-terminalui/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
+
 [dependency-groups]
 dev = [
+    "pre-commit>=4.5.0",
     "textual-dev>=1.8.0",
 ]
+
+[project.scripts]
+open_terminalui = "open_terminalui.entry_points:app"

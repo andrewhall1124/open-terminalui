@@ -1,26 +1,40 @@
-# Open Terminal UI
+# open-terminalui
 
-A terminal-based interface for interacting with Ollama and local LLM models, built with Textual.
+[![PyPI - Version](https://img.shields.io/pypi/v/open-terminalui.svg)](https://pypi.org/project/open-terminalui)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/open-terminalui.svg)](https://pypi.org/project/open-terminalui)
 
-## Requirements
+-----
 
-- Python 3.13+
-- [Ollama](https://ollama.ai/) installed and running
-- At least one Ollama model pulled (e.g., `ollama pull llama2`)
+## Table of Contents
+
+- [Installation](#installation)
+- [License](#license)
 
 ## Installation
 
-Using UV (recommended):
-
-```bash
-# Install dependencies
-uv sync
+```console
+pip install open-terminalui
 ```
 
 ## Development
 
-Run textual app in development mode
+### Installation
 
 ```bash
-textual run --dev open_terminalui:main
+uv sync
 ```
+
+### Testing
+
+```bash
+textual run --dev open_terminalui.entry_points:app
+```
+
+In a seperate console
+```bash
+textual console
+```
+
+## License
+
+`open-terminalui` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.

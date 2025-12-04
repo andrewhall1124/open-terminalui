@@ -1,0 +1,16 @@
+Header {
+}
+
+#container {
+    /*background: green;*/
+}
+
+#output {
+    /*background: orange;*/
+    height: 1fr;
+    align: left bottom;
+}
+
+#input {
+    /*background: red;*/
+}
