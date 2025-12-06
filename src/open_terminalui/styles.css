@@ -65,6 +65,10 @@
     height: auto;
 }
 
+#buttons_container {
+    height: auto;
+}
+
 #search_container {
     height: auto;
     padding: 1;
@@ -72,4 +76,25 @@
 
 #search_label {
     padding: 1;
+}
+
+#logs_container {
+    height: auto;
+    padding: 1;
+}
+
+#logs_label {
+    padding: 1;
+}
+
+.message-label-log {
+    color: white 50%;
+    text-style: bold;
+    text-align: left;
+    width: 100%;
+}
+
+.message-log .message-content {
+    text-align: left;
+    color: white 50%;
 }

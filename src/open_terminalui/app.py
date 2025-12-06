@@ -10,7 +10,6 @@ from textual.widgets import (
     Label,
     ListItem,
     ListView,
-    Markdown,
     Static,
     Switch,
 )
@@ -30,14 +29,19 @@ class ChatMessage(Static):
         self.add_class(f"message-{role}")
 
     def compose(self) -> ComposeResult:
-        label_text = "User:" if self.role == "user" else "Assistant:"
+        if self.role == "user":
+            label_text = "User:"
+        elif self.role == "log":
+            label_text = "Search Results:"
+        else:
+            label_text = "Assistant:"
         yield Label(label_text, classes=f"message-label-{self.role}")
         yield Static(self.content, classes="message-content")
 
     def update_content(self, new_content: str) -> None:
         """Update the message content"""
         self.content = new_content
-        content_widget = self.query_one(".message-content", Markdown)
+        content_widget = self.query_one(".message-content", Static)
         content_widget.update(new_content)
 
 
@@ -83,9 +87,13 @@ class OpenTerminalUI(App):
                     yield Input(
                         type="text", id="input", placeholder="Type a message..."
                     )
-                    with Horizontal(id="search_container"):
-                        yield Label("Search:", id="search_label")
-                        yield Switch(value=False, id="search_switch")
+                    with Horizontal(id="buttons_container"):
+                        with Horizontal(id="search_container"):
+                            yield Label("Search:", id="search_label")
+                            yield Switch(value=False, id="search_switch")
+                        with Horizontal(id="logs_container"):
+                            yield Label("Logs:", id="logs_label")
+                            yield Switch(value=False, id="logs_switch")
         yield Footer()
 
     def on_mount(self) -> None:
@@ -126,7 +134,15 @@ class OpenTerminalUI(App):
         chat_container = self.query_one("#chat_container", VerticalScroll)
         chat_container.remove_children()
 
+        # Check if logs should be displayed
+        logs_switch = self.query_one("#logs_switch", Switch)
+        show_logs = logs_switch.value
+
         for message in chat.messages:
+            # Skip log messages if logs switch is off
+            if message.role == "log" and not show_logs:
+                continue
+
             msg_widget = ChatMessage(message.content, message.role)
             chat_container.mount(msg_widget)
 
@@ -140,11 +156,11 @@ class OpenTerminalUI(App):
                 return "No search results found."
 
             # Format results for LLM context
-            formatted_results = "Web Search Results:\n\n"
-            for i, result in enumerate(results, 1):
-                formatted_results += f"{i}. {result['title']}\n"
-                formatted_results += f"   {result['body']}\n"
-                formatted_results += f"   Source: {result['href']}\n\n"
+            formatted_results = ""
+            for result in results:
+                formatted_results += f"Title: {result['title']}\n"
+                formatted_results += f"Content: {result['body']}\n"
+                formatted_results += f"Source: {result['href']}\n\n"
 
             return formatted_results
         except Exception as e:
@@ -158,9 +174,11 @@ class OpenTerminalUI(App):
         if not content:
             return
 
-        # Check if search is enabled
+        # Check if search and logs are enabled
         search_switch = self.query_one("#search_switch", Switch)
+        logs_switch = self.query_one("#logs_switch", Switch)
         use_search = search_switch.value
+        use_logs = logs_switch.value
 
         # Add user message to chat
         user_message = Message(role="user", content=content)
@@ -174,15 +192,18 @@ class OpenTerminalUI(App):
         chat_container.scroll_end(animate=False)
 
         input_widget.clear()
-        self.stream_ollama_response(content, use_search)
+        self.stream_ollama_response(content, use_search, use_logs)
 
     @work(exclusive=True, thread=True)
-    def stream_ollama_response(self, content: str, use_search: bool = False) -> None:
+    def stream_ollama_response(
+        self, content: str, use_search: bool = False, use_logs: bool = False
+    ) -> None:
         # Select and update loading indicator
         loading_indicator = self.query_one("#loading_indicator", Static)
 
         # If search is enabled, perform web search first
         messages_to_send = self.chat_history.copy()
+        search_results = None
         if use_search:
             self.call_from_thread(loading_indicator.update, "Searching the web...")
             search_results = self.perform_web_search(content)
@@ -194,6 +215,17 @@ class OpenTerminalUI(App):
                     "content": f"Use the following web search results to help answer the user's question:\n\n{search_results}",
                 }
             ] + messages_to_send
+
+            # Always save logs to database
+            log_message_data = Message(role="log", content=search_results)
+            self.current_chat.messages.append(log_message_data)
+
+            # Only display in UI if logs switch is enabled
+            if use_logs:
+                chat_container = self.query_one("#chat_container", VerticalScroll)
+                log_message = ChatMessage(search_results, "log")
+                self.call_from_thread(chat_container.mount, log_message)
+                self.call_from_thread(chat_container.scroll_end, animate=False)
 
         self.call_from_thread(loading_indicator.update, "Thinking...")
 
@@ -244,6 +276,12 @@ class OpenTerminalUI(App):
         """Handle chat selection from sidebar"""
         if isinstance(event.item, ChatListItem):
             self.load_chat(event.item.chat_id)
+
+    @on(Switch.Changed, "#logs_switch")
+    def handle_logs_toggle(self, event: Switch.Changed) -> None:
+        """Handle logs switch toggle - reload current chat to show/hide logs"""
+        if self.current_chat and self.current_chat.id is not None:
+            self.load_chat(self.current_chat.id)
 
     def action_new_chat(self) -> None:
         """Action to create a new chat"""
