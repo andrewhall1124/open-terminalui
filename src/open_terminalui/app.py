@@ -1,3 +1,4 @@
+from ddgs import DDGS
 from ollama import chat
 from textual import on, work
 from textual.app import App, ComposeResult
@@ -31,7 +32,7 @@ class ChatMessage(Static):
     def compose(self) -> ComposeResult:
         label_text = "User:" if self.role == "user" else "Assistant:"
         yield Label(label_text, classes=f"message-label-{self.role}")
-        yield Markdown(markdown=self.content, classes="message-content")
+        yield Static(self.content, classes="message-content")
 
     def update_content(self, new_content: str) -> None:
         """Update the message content"""
@@ -131,6 +132,24 @@ class OpenTerminalUI(App):
 
         chat_container.scroll_end(animate=False)
 
+    def perform_web_search(self, query: str, max_results: int = 5) -> str:
+        """Perform web search and return formatted results"""
+        try:
+            results = list(DDGS().text(query, max_results=max_results))
+            if not results:
+                return "No search results found."
+
+            # Format results for LLM context
+            formatted_results = "Web Search Results:\n\n"
+            for i, result in enumerate(results, 1):
+                formatted_results += f"{i}. {result['title']}\n"
+                formatted_results += f"   {result['body']}\n"
+                formatted_results += f"   Source: {result['href']}\n\n"
+
+            return formatted_results
+        except Exception as e:
+            return f"Search error: {str(e)}"
+
     @on(Input.Submitted, "#input")
     def handle_input_submission(self) -> None:
         input_widget = self.query_one("#input", Input)
@@ -138,6 +157,10 @@ class OpenTerminalUI(App):
 
         if not content:
             return
+
+        # Check if search is enabled
+        search_switch = self.query_one("#search_switch", Switch)
+        use_search = search_switch.value
 
         # Add user message to chat
         user_message = Message(role="user", content=content)
@@ -151,19 +174,34 @@ class OpenTerminalUI(App):
         chat_container.scroll_end(animate=False)
 
         input_widget.clear()
-        self.stream_ollama_response(content)
+        self.stream_ollama_response(content, use_search)
 
     @work(exclusive=True, thread=True)
-    def stream_ollama_response(self, content: str) -> None:
+    def stream_ollama_response(self, content: str, use_search: bool = False) -> None:
         # Select and update loading indicator
         loading_indicator = self.query_one("#loading_indicator", Static)
+
+        # If search is enabled, perform web search first
+        messages_to_send = self.chat_history.copy()
+        if use_search:
+            self.call_from_thread(loading_indicator.update, "Searching the web...")
+            search_results = self.perform_web_search(content)
+
+            # Add search results as system context
+            messages_to_send = [
+                {
+                    "role": "system",
+                    "content": f"Use the following web search results to help answer the user's question:\n\n{search_results}",
+                }
+            ] + messages_to_send
+
         self.call_from_thread(loading_indicator.update, "Thinking...")
 
         # Select chat history widget
         chat_container = self.query_one("#chat_container", VerticalScroll)
 
         # Stream ollama response
-        stream = chat(model="llama3.2", messages=self.chat_history, stream=True)
+        stream = chat(model="llama3.2", messages=messages_to_send, stream=True)
         accumulated_text = ""
 
         for i, chunk in enumerate(stream):

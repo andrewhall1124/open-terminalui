@@ -25,6 +25,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
+    "ddgs>=9.9.3",
     "ollama>=0.6.1",
     "textual[syntax]>=0.73.0",
 ]
