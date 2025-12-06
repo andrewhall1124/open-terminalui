@@ -3,7 +3,9 @@ from ollama import chat
 from textual import on, work
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical, VerticalScroll
+from textual.screen import ModalScreen
 from textual.widgets import (
+    Button,
     Footer,
     Header,
     Input,
@@ -14,9 +16,43 @@ from textual.widgets import (
     Switch,
 )
 
+from .document_manager import DocumentManager
 from .models import Chat, Message
 from .storage import ChatStorage
 from .theme import open_terminalui_theme
+
+
+class DocumentListItem(ListItem):
+    """A custom list item for displaying documents"""
+
+    def __init__(
+        self, file_path: str, file_name: str, chunk_count: int, *args, **kwargs
+    ):
+        super().__init__(*args, **kwargs)
+        self.file_path = file_path
+        self.file_name = file_name
+        self.chunk_count = chunk_count
+
+    def compose(self) -> ComposeResult:
+        yield Label(f"{self.file_name} ({self.chunk_count} chunks)")
+
+
+class DocumentManagerScreen(ModalScreen):
+    """Modal screen for managing documents"""
+
+    def __init__(self, doc_manager: DocumentManager, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.doc_manager = doc_manager
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="document_dialog"):
+            yield Label("Manage Documents", id="document_title")
+            with Horizontal(id="document_input_container"):
+                yield Input(
+                    placeholder="Enter PDF file path...",
+                    id="document_path_input",
+                )
+                yield Button("Add", id="add_document_btn", variant="primary")
 
 
 class ChatMessage(Static):
@@ -63,6 +99,7 @@ class OpenTerminalUI(App):
         ("ctrl+n", "new_chat", "New Chat"),
         ("ctrl+b", "toggle_sidebar", "Toggle Sidebar"),
         ("ctrl+d", "delete_chat", "Delete Chat"),
+        ("ctrl+k", "manage_documents", "Manage Documents"),
     ]
 
     def __init__(self, *args, **kwargs):
@@ -70,6 +107,7 @@ class OpenTerminalUI(App):
         self.chat_history = []
         self.current_assistant_message: ChatMessage
         self.storage = ChatStorage()
+        self.doc_manager = DocumentManager()
         self.current_chat: Chat
         self.sidebar_visible = True
 
@@ -94,6 +132,9 @@ class OpenTerminalUI(App):
                         with Horizontal(id="logs_container"):
                             yield Label("Logs:", id="logs_label")
                             yield Switch(value=False, id="logs_switch")
+                        with Horizontal(id="documents_container"):
+                            yield Label("Documents:", id="documents_label")
+                            yield Switch(value=False, id="documents_switch")
         yield Footer()
 
     def on_mount(self) -> None:
@@ -174,11 +215,13 @@ class OpenTerminalUI(App):
         if not content:
             return
 
-        # Check if search and logs are enabled
+        # Check if search, logs, and documents are enabled
         search_switch = self.query_one("#search_switch", Switch)
         logs_switch = self.query_one("#logs_switch", Switch)
+        documents_switch = self.query_one("#documents_switch", Switch)
         use_search = search_switch.value
         use_logs = logs_switch.value
+        use_documents = documents_switch.value
 
         # Add user message to chat
         user_message = Message(role="user", content=content)
@@ -192,11 +235,15 @@ class OpenTerminalUI(App):
         chat_container.scroll_end(animate=False)
 
         input_widget.clear()
-        self.stream_ollama_response(content, use_search, use_logs)
+        self.stream_ollama_response(content, use_search, use_logs, use_documents)
 
     @work(exclusive=True, thread=True)
     def stream_ollama_response(
-        self, content: str, use_search: bool = False, use_logs: bool = False
+        self,
+        content: str,
+        use_search: bool = False,
+        use_logs: bool = False,
+        use_documents: bool = False,
     ) -> None:
         # Select and update loading indicator
         loading_indicator = self.query_one("#loading_indicator", Static)
@@ -325,3 +372,7 @@ class OpenTerminalUI(App):
         self.theme = (
             "textual-dark" if self.theme == "textual-light" else "textual-light"
         )
+
+    def action_manage_documents(self) -> None:
+        """Open the document management screen"""
+        self.push_screen(DocumentManagerScreen(self.doc_manager))

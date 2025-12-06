@@ -88,6 +88,15 @@
     padding: 1;
 }
 
+#documents_container {
+    height: auto;
+    padding: 1;
+}
+
+#documents_label {
+    padding: 1;
+}
+
 .message-label-log {
     color: white 50%;
     text-style: bold;
@@ -98,4 +107,29 @@
 .message-log .message-content {
     text-align: left;
     color: white 50%;
+}
+
+DocumentManagerScreen{
+    align: center middle;
+}
+
+#document_dialog {
+    background: $background;
+    height: 90%;
+    width: 90%;
+    border: solid $primary;
+    padding: 1;
+}
+
+#document_input_container{
+    height: auto;
+    padding: 1;
+}
+
+#document_path_input {
+    width: 1fr;
+}
+
+#add_document_btn{
+    width: auto;
 }
