@@ -57,7 +57,8 @@
 
 #loading_indicator {
     color: $primary;
-    height: 1;
+    min-height: 1;
+    height: auto;
     padding: 1;
 }
 

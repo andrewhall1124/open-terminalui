@@ -82,7 +82,7 @@ class OpenTerminalUI(App):
             with Vertical(id="container"):
                 with VerticalScroll(id="chat_container"):
                     pass  # Messages will be added dynamically
-                yield Static("", id="loading_indicator")
+                yield Static(" ", id="loading_indicator")
                 with Vertical(id="input_bar"):
                     yield Input(
                         type="text", id="input", placeholder="Type a message..."
@@ -253,7 +253,7 @@ class OpenTerminalUI(App):
                 self.call_from_thread(
                     chat_container.mount, self.current_assistant_message
                 )
-                self.call_from_thread(loading_indicator.update, "")
+                self.call_from_thread(loading_indicator.update, " ")
             # Update existing assistant message
             else:
                 self.chat_history[-1]["content"] = accumulated_text
