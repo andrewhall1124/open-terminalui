@@ -72,6 +72,7 @@
 
 #search_container {
     height: auto;
+    width: auto;
     padding: 1;
 }
 
@@ -81,6 +82,7 @@
 
 #logs_container {
     height: auto;
+    width: auto;
     padding: 1;
 }
 
@@ -90,6 +92,7 @@
 
 #documents_container {
     height: auto;
+    width: auto;
     padding: 1;
 }
 
@@ -104,12 +107,19 @@
     width: 100%;
 }
 
-.message-log .message-content {
+.message-web_search .message-content {
     text-align: left;
     color: white 50%;
+    text-style: italic;
 }
 
-DocumentManagerScreen{
+.message-vector_search .message-content {
+    text-align: left;
+    color: white 50%;
+    text-style: italic;
+}
+
+DocumentManagerScreen {
     align: center middle;
 }
 
@@ -134,7 +144,7 @@ DocumentManagerScreen{
     padding-bottom: 1;
 }
 
-#document_input_container{
+#document_input_container {
     height: auto;
 }
 
@@ -142,11 +152,11 @@ DocumentManagerScreen{
     width: 1fr;
 }
 
-#add_document_btn{
+#add_document_btn {
     width: auto;
 }
 
-#document_table{
+#document_table {
     margin-top: 1;
 }
 
@@ -154,10 +164,10 @@ DocumentManagerScreen{
     align: center top;
 }
 
-#remove_document_btn{
+#remove_document_btn {
     margin: 1;
 }
 
-#close_dialog_btn{
+#close_dialog_btn {
     margin: 1;
 }

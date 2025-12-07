@@ -143,8 +143,10 @@ class ChatMessage(Static):
     def compose(self) -> ComposeResult:
         if self.role == "user":
             label_text = "User:"
-        elif self.role == "log":
-            label_text = "Search Results:"
+        elif self.role == "web_search":
+            label_text = "Web Search Results:"
+        elif self.role == "vector_search":
+            label_text = "Vector Search Results:"
         else:
             label_text = "Assistant:"
         yield Label(label_text, classes=f"message-label-{self.role}")
@@ -205,12 +207,12 @@ class OpenTerminalUI(App):
                         with Horizontal(id="search_container"):
                             yield Label("Search:", id="search_label")
                             yield Switch(value=False, id="search_switch")
-                        with Horizontal(id="logs_container"):
-                            yield Label("Logs:", id="logs_label")
-                            yield Switch(value=False, id="logs_switch")
                         with Horizontal(id="documents_container"):
                             yield Label("Documents:", id="documents_label")
                             yield Switch(value=False, id="documents_switch")
+                        with Horizontal(id="logs_container"):
+                            yield Label("Logs:", id="logs_label")
+                            yield Switch(value=False, id="logs_switch")
         yield Footer()
 
     def on_mount(self) -> None:
@@ -257,7 +259,7 @@ class OpenTerminalUI(App):
 
         for message in chat.messages:
             # Skip log messages if logs switch is off
-            if message.role == "log" and not show_logs:
+            if message.role in ("web_search", "vector_search") and not show_logs:
                 continue
 
             msg_widget = ChatMessage(message.content, message.role)
@@ -357,17 +359,18 @@ class OpenTerminalUI(App):
             ] + messages_to_send
 
             # Always save logs to database
-            log_message_data = Message(role="log", content=web_search_results)
+            log_message_data = Message(role="web_search", content=web_search_results)
             self.current_chat.messages.append(log_message_data)
 
             # Only display in UI if logs switch is enabled
             if use_logs:
                 chat_container = self.query_one("#chat_container", VerticalScroll)
-                log_message = ChatMessage(web_search_results, "log")
+                log_message = ChatMessage(web_search_results, "web_search")
                 self.call_from_thread(chat_container.mount, log_message)
                 self.call_from_thread(chat_container.scroll_end, animate=False)
 
         # If documents is enabled, perform vector search
+        vector_search_results = None
         if use_documents:
             self.call_from_thread(
                 loading_indicator.update, "Searching vector database..."
@@ -383,13 +386,15 @@ class OpenTerminalUI(App):
             ] + messages_to_send
 
             # Always save logs to database
-            log_message_data = Message(role="log", content=vector_search_results)
+            log_message_data = Message(
+                role="vector_search", content=vector_search_results
+            )
             self.current_chat.messages.append(log_message_data)
 
             # Only display in UI if logs switch is enabled
             if use_logs:
                 chat_container = self.query_one("#chat_container", VerticalScroll)
-                log_message = ChatMessage(vector_search_results, "log")
+                log_message = ChatMessage(vector_search_results, "vector_search")
                 self.call_from_thread(chat_container.mount, log_message)
                 self.call_from_thread(chat_container.scroll_end, animate=False)
 
