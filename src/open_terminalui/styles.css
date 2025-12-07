@@ -114,7 +114,7 @@ DocumentManagerScreen{
 }
 
 #document_dialog {
-    background: $background;
+    background: white 10%;
     height: 90%;
     width: 90%;
     border: solid $primary;
@@ -130,13 +130,12 @@ DocumentManagerScreen{
 
 #status_indicator {
     color: white 50%;
-    padding-left: 2;
     text-style: italic;
+    padding-bottom: 1;
 }
 
 #document_input_container{
     height: auto;
-    padding: 1;
 }
 
 #document_path_input {
@@ -145,4 +144,20 @@ DocumentManagerScreen{
 
 #add_document_btn{
     width: auto;
+}
+
+#document_table{
+    margin-top: 1;
+}
+
+#document_button_container {
+    align: center top;
+}
+
+#remove_document_btn{
+    margin: 1;
+}
+
+#close_dialog_btn{
+    margin: 1;
 }
