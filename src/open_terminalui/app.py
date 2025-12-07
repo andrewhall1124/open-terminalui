@@ -47,12 +47,48 @@ class DocumentManagerScreen(ModalScreen):
     def compose(self) -> ComposeResult:
         with Vertical(id="document_dialog"):
             yield Label("Manage Documents", id="document_title")
+            yield Static(id="status_indicator")
             with Horizontal(id="document_input_container"):
                 yield Input(
                     placeholder="Enter PDF file path...",
                     id="document_path_input",
                 )
                 yield Button("Add", id="add_document_btn", variant="primary")
+
+    @on(Button.Pressed, "#add_document_btn")
+    def handle_add_document(self) -> None:
+        # Select input widget
+        input_widget = self.query_one("#document_path_input", Input)
+
+        # Get file_path
+        file_path: str = input_widget.value.strip()
+
+        # Clear input widget
+        input_widget.clear()
+
+        # Process document
+        self.process_document(file_path)
+
+    @work(exclusive=True, thread=True)
+    def process_document(self, file_path: str) -> None:
+        # Select widgets
+        status_widget = self.query_one("#status_indicator", Static)
+        input_widget = self.query_one("#document_path_input", Input)
+        button_widget = self.query_one("#add_document_btn", Button)
+
+        # Disable button and show processing status
+        self.app.call_from_thread(setattr, button_widget, "disabled", True)
+        self.app.call_from_thread(status_widget.update, "Processing...")
+
+        # Process document
+        success, message = self.doc_manager.add_document(file_path)
+
+        # Update status and re-enable button
+        self.app.call_from_thread(status_widget.update, message)
+        self.app.call_from_thread(setattr, button_widget, "disabled", False)
+
+        if success:
+            self.app.call_from_thread(input_widget.clear)
 
 
 class ChatMessage(Static):
