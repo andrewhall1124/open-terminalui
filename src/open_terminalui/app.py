@@ -283,6 +283,23 @@ class OpenTerminalUI(App):
         except Exception as e:
             return f"Search error: {str(e)}"
 
+    def perform_vector_search(self, query: str, max_results: int = 5) -> str:
+        """Perform vector search and return formatted results"""
+        try:
+            # Search vector database
+            results = self.doc_manager.search_documents(query=query, top_k=max_results)
+
+            # Format results for LLM context
+            formatted_results = ""
+            for result in results:
+                formatted_results += f"File Path: {result[1]}\n"
+                formatted_results += f"Content: {result[0]}\n"
+                formatted_results += f"Similarity Score: {result[2]}\n\n"
+
+            return formatted_results
+        except Exception as e:
+            return f"Vector search error: {str(e)}"
+
     @on(Input.Submitted, "#input")
     def handle_input_submission(self) -> None:
         input_widget = self.query_one("#input", Input)
@@ -326,27 +343,53 @@ class OpenTerminalUI(App):
 
         # If search is enabled, perform web search first
         messages_to_send = self.chat_history.copy()
-        search_results = None
+        web_search_results = None
         if use_search:
             self.call_from_thread(loading_indicator.update, "Searching the web...")
-            search_results = self.perform_web_search(content)
+            web_search_results = self.perform_web_search(content)
 
             # Add search results as system context
             messages_to_send = [
                 {
                     "role": "system",
-                    "content": f"Use the following web search results to help answer the user's question:\n\n{search_results}",
+                    "content": f"Use the following web search results to help answer the user's question:\n\n{web_search_results}",
                 }
             ] + messages_to_send
 
             # Always save logs to database
-            log_message_data = Message(role="log", content=search_results)
+            log_message_data = Message(role="log", content=web_search_results)
             self.current_chat.messages.append(log_message_data)
 
             # Only display in UI if logs switch is enabled
             if use_logs:
                 chat_container = self.query_one("#chat_container", VerticalScroll)
-                log_message = ChatMessage(search_results, "log")
+                log_message = ChatMessage(web_search_results, "log")
+                self.call_from_thread(chat_container.mount, log_message)
+                self.call_from_thread(chat_container.scroll_end, animate=False)
+
+        # If documents is enabled, perform vector search
+        if use_documents:
+            self.call_from_thread(
+                loading_indicator.update, "Searching vector database..."
+            )
+            vector_search_results = self.perform_vector_search(content)
+
+            # Add search results as system context
+            messages_to_send = [
+                {
+                    "role": "system",
+                    "content": f"Use the following vector search results to help answer the user's question:\n\n{vector_search_results}",
+                }
+            ] + messages_to_send
+
+            # Always save logs to database
+            log_message_data = Message(role="log", content=vector_search_results)
+            self.current_chat.messages.append(log_message_data)
+
+            # Only display in UI if logs switch is enabled
+            if use_logs:
+                chat_container = self.query_one("#chat_container", VerticalScroll)
+                log_message = ChatMessage(vector_search_results, "log")
                 self.call_from_thread(chat_container.mount, log_message)
                 self.call_from_thread(chat_container.scroll_end, animate=False)
 
