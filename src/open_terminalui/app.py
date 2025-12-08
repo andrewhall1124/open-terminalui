@@ -172,7 +172,7 @@ class ChatListItem(ListItem):
 
 
 class OpenTerminalUI(App):
-    CSS_PATH = "styles.css"
+    CSS_PATH = "styles.tcss"
     BINDINGS = [
         ("ctrl+n", "new_chat", "New Chat"),
         ("ctrl+b", "toggle_sidebar", "Toggle Sidebar"),
