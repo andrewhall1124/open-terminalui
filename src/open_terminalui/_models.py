@@ -20,8 +20,12 @@ class Chat:
     updated_at: datetime
 
     def to_ollama_messages(self) -> list[dict]:
-        """Convert messages to Ollama API format"""
-        return [msg.to_dict() for msg in self.messages]
+        """Convert messages to Ollama API format, excluding log messages"""
+        return [
+            msg.to_dict()
+            for msg in self.messages
+            if msg.role in ("user", "assistant", "system")
+        ]
 
     @staticmethod
     def create_unsaved(title: str | None = None) -> "Chat":

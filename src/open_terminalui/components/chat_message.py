@@ -21,6 +21,8 @@ class ChatMessage(Static):
             label_text = "Web Search Results:"
         elif self.role == "document_search":
             label_text = "Vector Search Results:"
+        elif self.role == "memory_search":
+            label_text = "Memory Search Results:"
         else:
             label_text = "Assistant:"
         yield Label(label_text, classes=f"message-label-{self.role}")

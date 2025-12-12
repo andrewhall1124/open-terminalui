@@ -17,8 +17,9 @@ from open_terminalui._themes import open_terminalui_theme
 from open_terminalui.chat_manager import ChatManager
 from open_terminalui.components import ChatListItem, ChatMessage
 from open_terminalui.document_manager import DocumentManager
+from open_terminalui.memory_manager import MemoryManager
 from open_terminalui.screens.document_screen import DocumentManagerScreen
-from open_terminalui.tools import document_search, web_search
+from open_terminalui.tools import document_search, memory_search, web_search
 
 
 class OpenTerminalUI(App):
@@ -36,6 +37,7 @@ class OpenTerminalUI(App):
         self.current_assistant_message: ChatMessage
         self.chat_manager = ChatManager()
         self.doc_manager = DocumentManager()
+        self.memory_manager = MemoryManager()
         self.current_chat: Chat
         self.sidebar_visible = True
 
@@ -54,14 +56,17 @@ class OpenTerminalUI(App):
                         type="text", id="input", placeholder="Type a message..."
                     )
                     with Horizontal(id="buttons_container"):
-                        with Horizontal(id="search_container"):
-                            yield Label("Search:", id="search_label")
+                        with Horizontal(classes="toggle_container"):
+                            yield Label("Search:", classes="toggle_label")
                             yield Switch(value=False, id="search_switch")
-                        with Horizontal(id="documents_container"):
-                            yield Label("Documents:", id="documents_label")
+                        with Horizontal(classes="toggle_container"):
+                            yield Label("Documents:", classes="toggle_label")
                             yield Switch(value=False, id="documents_switch")
-                        with Horizontal(id="logs_container"):
-                            yield Label("Logs:", id="logs_label")
+                        with Horizontal(classes="toggle_container"):
+                            yield Label("Memory:", classes="toggle_label")
+                            yield Switch(value=False, id="memory_switch")
+                        with Horizontal(classes="toggle_container"):
+                            yield Label("Logs:", classes="toggle_label")
                             yield Switch(value=False, id="logs_switch")
         yield Footer()
 
@@ -79,6 +84,7 @@ class OpenTerminalUI(App):
         use_search: bool = False,
         use_logs: bool = False,
         use_documents: bool = False,
+        use_memory: bool = False,
     ) -> None:
         # Select and update loading indicator
         loading_indicator = self.query_one("#loading_indicator", Static)
@@ -140,12 +146,42 @@ class OpenTerminalUI(App):
                 self.call_from_thread(chat_container.mount, log_message)
                 self.call_from_thread(chat_container.scroll_end, animate=False)
 
+        # If memory is enabled, perform memory search
+        memory_search_results = None
+        if use_memory:
+            self.call_from_thread(loading_indicator.update, "Searching chat memory...")
+            memory_search_results = memory_search(
+                memory_manager=self.memory_manager, query=content
+            )
+
+            # Add search results as system context
+            messages_to_send = [
+                {
+                    "role": "system",
+                    "content": f"Use the following chat summaries from other messages to help answer the user's question:\n\n{memory_search_results}",
+                }
+            ] + messages_to_send
+
+            # Always save logs to database
+            log_message_data = Message(
+                role="memory_search", content=memory_search_results
+            )
+            self.current_chat.messages.append(log_message_data)
+
+            # Only display in UI if logs switch is enabled
+            if use_logs:
+                chat_container = self.query_one("#chat_container", VerticalScroll)
+                log_message = ChatMessage(memory_search_results, "memory_search")
+                self.call_from_thread(chat_container.mount, log_message)
+                self.call_from_thread(chat_container.scroll_end, animate=False)
+
         self.call_from_thread(loading_indicator.update, "Thinking...")
 
         # Select chat history widget
         chat_container = self.query_one("#chat_container", VerticalScroll)
 
         # Stream ollama response
+        print(messages_to_send)
         stream = ollama.chat(model="llama3.2", messages=messages_to_send, stream=True)
         accumulated_text = ""
 
@@ -180,6 +216,9 @@ class OpenTerminalUI(App):
 
         # Save chat to database after streaming completes
         self.chat_manager.save_chat(self.current_chat)
+
+        # Save chat to vector database too
+        self.memory_manager.save_chat(self.current_chat)
 
         # Refresh sidebar to update chat title/timestamp
         self.call_from_thread(self._refresh_chat_list)
@@ -223,7 +262,10 @@ class OpenTerminalUI(App):
 
         for message in chat.messages:
             # Skip log messages if logs switch is off
-            if message.role in ("web_search", "document_search") and not show_logs:
+            if (
+                message.role in ("web_search", "document_search", "memory_search")
+                and not show_logs
+            ):
                 continue
 
             msg_widget = ChatMessage(message.content, message.role)
@@ -245,9 +287,11 @@ class OpenTerminalUI(App):
         search_switch = self.query_one("#search_switch", Switch)
         logs_switch = self.query_one("#logs_switch", Switch)
         documents_switch = self.query_one("#documents_switch", Switch)
+        memory_switch = self.query_one("#memory_switch", Switch)
         use_search = search_switch.value
         use_logs = logs_switch.value
         use_documents = documents_switch.value
+        use_memory = memory_switch.value
 
         # Add user message to chat
         user_message = Message(role="user", content=content)
@@ -261,7 +305,9 @@ class OpenTerminalUI(App):
         chat_container.scroll_end(animate=False)
 
         input_widget.clear()
-        self.stream_ollama_response(content, use_search, use_logs, use_documents)
+        self.stream_ollama_response(
+            content, use_search, use_logs, use_documents, use_memory
+        )
 
     @on(ListView.Selected, "#chat_list")
     def handle_chat_selection(self, event: ListView.Selected) -> None:
@@ -297,6 +343,7 @@ class OpenTerminalUI(App):
 
         # Delete from database
         self.chat_manager.delete_chat(chat_id_to_delete)
+        self.memory_manager.delete_chat(chat_id_to_delete)
 
         # If we're deleting the current chat, create a new one
         if (

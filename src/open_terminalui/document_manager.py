@@ -196,15 +196,15 @@ class DocumentManager:
 
             chunks = []
             documents = results["documents"][0]
-            metadatas = results["metadatas"]
-            distances = results["distances"]
+            metadatas = results["metadatas"][0] if results["metadatas"] else []
+            distances = results["distances"][0] if results["distances"] else []
 
             for i, doc in enumerate(documents):
-                if metadatas:
-                    metadata = metadatas[0][i]
+                if i < len(metadatas):
+                    metadata = metadatas[i]
                     # ChromaDB returns distances, lower is better
                     # Convert to similarity score (1 - normalized_distance)
-                    distance = distances[0][i] if distances else 0
+                    distance = distances[i] if i < len(distances) else 0
                     similarity = max(0, 1 - distance)
 
                     chunks.append((doc, metadata["file_name"], similarity))

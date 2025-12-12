@@ -70,40 +70,31 @@
     height: auto;
 }
 
-#search_container {
+.toggle_container {
     height: auto;
     width: auto;
     padding: 1;
 }
 
-#search_label {
+.toggle_label {
     padding: 1;
 }
 
-#logs_container {
-    height: auto;
-    width: auto;
-    padding: 1;
-}
-
-#logs_label {
-    padding: 1;
-}
-
-#documents_container {
-    height: auto;
-    width: auto;
-    padding: 1;
-}
-
-#documents_label {
-    padding: 1;
-}
-
-.message-label-log {
+.message-label-web_search {
     color: white 50%;
     text-style: bold;
-    text-align: left;
+    width: 100%;
+}
+
+.message-label-document_search {
+    color: white 50%;
+    text-style: bold;
+    width: 100%;
+}
+
+.message-label-memory_search {
+    color: white 50%;
+    text-style: bold;
     width: 100%;
 }
 
@@ -114,6 +105,12 @@
 }
 
 .message-document_search .message-content {
+    text-align: left;
+    color: white 50%;
+    text-style: italic;
+}
+
+.message-memory_search .message-content {
     text-align: left;
     color: white 50%;
     text-style: italic;
