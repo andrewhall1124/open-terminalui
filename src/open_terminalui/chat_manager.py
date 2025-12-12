@@ -3,10 +3,10 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 
-from .models import Chat, Message
+from ._models import Chat, Message
 
 
-class ChatStorage:
+class ChatManager:
     def __init__(self, db_path: str | None = None):
         if db_path is None:
             # Default to ~/.open-terminalui/chats.db

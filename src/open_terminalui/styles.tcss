@@ -113,7 +113,7 @@
     text-style: italic;
 }
 
-.message-vector_search .message-content {
+.message-document_search .message-content {
     text-align: left;
     color: white 50%;
     text-style: italic;

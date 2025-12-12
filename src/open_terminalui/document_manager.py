@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import List, Tuple
 
 import chromadb
-from chromadb.config import Settings
 from pypdf import PdfReader
 
 
@@ -170,7 +169,7 @@ class DocumentManager:
                 for doc in docs_by_hash.values()
             ]
 
-        except Exception as e:
+        except Exception as _:
             return []
 
     def search_documents(
@@ -196,16 +195,21 @@ class DocumentManager:
                 return []
 
             chunks = []
-            for i, doc in enumerate(results["documents"][0]):
-                metadata = results["metadatas"][0][i]
-                # ChromaDB returns distances, lower is better
-                # Convert to similarity score (1 - normalized_distance)
-                distance = results["distances"][0][i] if results["distances"] else 0
-                similarity = max(0, 1 - distance)
+            documents = results["documents"][0]
+            metadatas = results["metadatas"]
+            distances = results["distances"]
 
-                chunks.append((doc, metadata["file_name"], similarity))
+            for i, doc in enumerate(documents):
+                if metadatas:
+                    metadata = metadatas[0][i]
+                    # ChromaDB returns distances, lower is better
+                    # Convert to similarity score (1 - normalized_distance)
+                    distance = distances[0][i] if distances else 0
+                    similarity = max(0, 1 - distance)
+
+                    chunks.append((doc, metadata["file_name"], similarity))
 
             return chunks
 
-        except Exception as e:
+        except Exception as _:
             return []
