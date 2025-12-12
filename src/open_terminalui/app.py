@@ -191,8 +191,9 @@ class OpenTerminalUI(App):
         chat_list.clear()
 
         chats = self.chat_manager.list_chats()
-        for chat_id, title, updated_at in chats:
-            chat_list.append(ChatListItem(chat_id, title))
+        for chat in chats:
+            if chat.id is not None:
+                chat_list.append(ChatListItem(chat.id, chat.title))
 
     def _new_chat(self) -> None:
         """Create a new chat and clear the UI (not saved to DB until it has messages)"""

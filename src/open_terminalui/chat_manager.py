@@ -100,19 +100,34 @@ class ChatManager:
             updated_at=datetime.fromisoformat(row["updated_at"]),
         )
 
-    def list_chats(self) -> list[tuple[int, str, datetime]]:
+    def list_chats(self) -> list[Chat]:
         """List all chats (id, title, updated_at)"""
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.execute(
-                "SELECT id, title, updated_at FROM chats ORDER BY updated_at DESC"
+                "SELECT id, messages_json, title, created_at, updated_at FROM chats ORDER BY updated_at DESC"
             )
             rows = cursor.fetchall()
+        # messages_json = json.dumps([msg.to_dict() for msg in chat.messages])
 
-        return [
-            (row["id"], row["title"], datetime.fromisoformat(row["updated_at"]))
-            for row in rows
-        ]
+        chats = []
+        for row in rows:
+            messages_data = json.loads(row["messages_json"])
+            messages = [
+                Message(role=msg["role"], content=msg["content"])
+                for msg in messages_data
+            ]
+            chats.append(
+                Chat(
+                    row["id"],
+                    row["title"],
+                    messages,
+                    datetime.fromisoformat(row["updated_at"]),
+                    datetime.fromisoformat(row["updated_at"]),
+                )
+            )
+
+        return chats
 
     def delete_chat(self, chat_id: int):
         """Delete a chat by ID"""
