@@ -7,7 +7,16 @@ from ._models import Chat, Message
 
 
 class ChatManager:
+    """Manages chat persistence using SQLite database"""
+
     def __init__(self, db_path: str | None = None):
+        """
+        Initialize the chat manager with SQLite database.
+
+        Args:
+            db_path: Path to the SQLite database file. If None, defaults to
+                    ~/.open-terminalui/chats.db
+        """
         if db_path is None:
             # Default to ~/.open-terminalui/chats.db
             app_dir = Path.home() / ".open-terminalui"
@@ -18,7 +27,12 @@ class ChatManager:
         self._init_db()
 
     def _init_db(self):
-        """Initialize the database schema"""
+        """
+        Initialize the database schema.
+
+        Creates the chats table if it doesn't exist with columns for id, title,
+        messages_json, created_at, and updated_at.
+        """
         with sqlite3.connect(self.db_path) as conn:
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS chats (
@@ -32,7 +46,16 @@ class ChatManager:
             conn.commit()
 
     def create_chat(self, title: str | None = None) -> Chat:
-        """Create a new chat"""
+        """
+        Create a new chat and save it to the database.
+
+        Args:
+            title: The title for the chat. If None, generates a default title
+                  with the current date and time (e.g., "Chat 2025-12-11 14:30")
+
+        Returns:
+            A new Chat object with an assigned ID and empty message list
+        """
         if title is None:
             title = f"Chat {datetime.now().strftime('%Y-%m-%d %H:%M')}"
 
@@ -52,7 +75,16 @@ class ChatManager:
         )
 
     def save_chat(self, chat: Chat):
-        """Save or update a chat"""
+        """
+        Save or update a chat in the database.
+
+        If the chat has no ID (newly created), inserts it as a new record.
+        If the chat has an ID (existing), updates the existing record.
+        Automatically updates the updated_at timestamp.
+
+        Args:
+            chat: The Chat object to save. The chat.id will be set if it's a new chat.
+        """
         messages_json = json.dumps([msg.to_dict() for msg in chat.messages])
         chat.updated_at = datetime.now()
 
@@ -78,7 +110,15 @@ class ChatManager:
             conn.commit()
 
     def load_chat(self, chat_id: int) -> Chat | None:
-        """Load a chat by ID"""
+        """
+        Load a chat from the database by its ID.
+
+        Args:
+            chat_id: The unique identifier of the chat to load
+
+        Returns:
+            The Chat object if found, None if no chat exists with the given ID
+        """
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.execute("SELECT * FROM chats WHERE id = ?", (chat_id,))
@@ -101,7 +141,13 @@ class ChatManager:
         )
 
     def list_chats(self) -> list[Chat]:
-        """List all chats (id, title, updated_at)"""
+        """
+        List all chats from the database.
+
+        Returns:
+            List of all Chat objects ordered by updated_at timestamp in descending order
+            (most recently updated first). Returns empty list if no chats exist.
+        """
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.execute(
@@ -130,7 +176,12 @@ class ChatManager:
         return chats
 
     def delete_chat(self, chat_id: int):
-        """Delete a chat by ID"""
+        """
+        Delete a chat from the database.
+
+        Args:
+            chat_id: The unique identifier of the chat to delete
+        """
         with sqlite3.connect(self.db_path) as conn:
             conn.execute("DELETE FROM chats WHERE id = ?", (chat_id,))
             conn.commit()

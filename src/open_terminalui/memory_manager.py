@@ -32,7 +32,21 @@ class MemoryManager:
         """Generate a hash for the file to use as unique identifier"""
         return hashlib.md5(f"{chat_id}-{message_index}".encode()).hexdigest()
 
-    def _summarize_message(self, message: Message) -> str | None:
+    def _summarize_message(self, message: Message, min_length: int = 200) -> str | None:
+        """
+        Summarize a message if it exceeds min_length, otherwise return original content.
+
+        Args:
+            message: The message to summarize
+            min_length: Minimum character length to trigger summarization (default: 200)
+
+        Returns:
+            Summary if message is long enough, otherwise original content
+        """
+        # If message is short, return it as-is without summarization
+        if len(message.content) < min_length:
+            return message.content
+
         prompt = f"""Help me build your memory by summarizing this message from the user into just the facts:
 
 Message: {message.content}
@@ -56,6 +70,16 @@ Provide only the summary without labels:
             raise Exception(e)
 
     def save_chat(self, chat: Chat):
+        """
+        Save chat messages to the vector store with embeddings.
+
+        Processes each user and assistant message in the chat, summarizes them if needed,
+        and stores them in ChromaDB for semantic search. Skips messages that have already
+        been saved.
+
+        Args:
+            chat: The chat object containing messages to save
+        """
         if chat.id is None:
             return
 
@@ -139,6 +163,23 @@ Provide only the summary without labels:
     def search_chat_summaries(
         self, query: str, top_k: int = 5
     ) -> List[Tuple[str, float]]:
+        """
+        Search chat message summaries using semantic similarity.
+
+        Performs a vector similarity search across all stored chat message summaries
+        and returns the most relevant results.
+
+        Args:
+            query: The search query text
+            top_k: Maximum number of results to return (default: 5)
+
+        Returns:
+            List of tuples containing (document_text, similarity_score) where
+            similarity_score is between 0 and 1, with 1 being most similar
+
+        Raises:
+            Exception: If the search operation fails
+        """
         try:
             results = self.collection.query(query_texts=[query], n_results=top_k)
 

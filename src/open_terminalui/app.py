@@ -181,7 +181,6 @@ class OpenTerminalUI(App):
         chat_container = self.query_one("#chat_container", VerticalScroll)
 
         # Stream ollama response
-        print(messages_to_send)
         stream = ollama.chat(model="llama3.2", messages=messages_to_send, stream=True)
         accumulated_text = ""
 
